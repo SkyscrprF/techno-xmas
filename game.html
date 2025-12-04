@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cattura i Regali di Natale (Livelli Auto Corretto)</title>
+    <title>Cattura i Regali di Natale (Stabilità Massima)</title>
     <style>
         body {
             display: flex;
@@ -37,7 +37,6 @@
             cursor: move;
             user-select: none;
         }
-        /* AGGIORNATO: Ora usa flexbox per allineare punteggio e pulsante */
         #score-panel { 
             margin-top: 10px;
             padding: 10px;
@@ -110,7 +109,7 @@
             let spawnInterval;
             let running = false;
             
-            const objects = [];
+            let objects = []; // 🚩 Modificato da const a let per maggior flessibilità se necessario
             let sleighX;
 
             function initSleighPosition() {
@@ -232,7 +231,8 @@
             }
 
             function removeObject(index) {
-                if (index >= 0 && index < objects.length) {
+                // 🚩 Controllo di sicurezza: verifica che l'elemento sia effettivamente un figlio prima di rimuoverlo
+                if (index >= 0 && index < objects.length && container.contains(objects[index].element)) {
                     container.removeChild(objects[index].element);
                     objects.splice(index, 1);
                 }
@@ -242,29 +242,23 @@
             // CONTROLLO INPUT E GIOCO
             // =========================================================
             
-            // 🚩 FIX: Logica di trascinamento rivista per usare addEventListener/removeEventListener 
-            // in modo più pulito e affidabile
             sleigh.addEventListener('mousedown', (e) => {
                 if (!running) return;
-                e.preventDefault(); // Previene il drag nativo del browser
+                e.preventDefault(); 
                 
-                // Calcola lo scostamento iniziale (offset)
                 let shiftX = e.clientX - sleigh.getBoundingClientRect().left;
                 let containerLeft = container.getBoundingClientRect().left;
 
-                // Funzione che gestisce il movimento del cursore
                 function onMouseMove(event) {
                     let newX = event.clientX - shiftX - containerLeft;
                     updateSleighPosition(newX);
                 }
 
-                // Funzione che interrompe il trascinamento (cleanup)
                 function onMouseUp() {
                     document.removeEventListener('mousemove', onMouseMove);
                     document.removeEventListener('mouseup', onMouseUp);
                 }
 
-                // Attiva l'ascolto per il movimento e il rilascio del mouse
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
             });
@@ -281,12 +275,19 @@
             restartButton.addEventListener('click', startGame);
 
             function startGame() {
+                // Pulizia aggressiva di tutti gli intervalli
                 clearInterval(gameLoopInterval);
                 clearInterval(spawnInterval);
-                objects.forEach(obj => container.removeChild(obj.element));
-                objects.length = 0;
-                
-                // Reset ai valori iniziali (1.2 per la gravità)
+
+                // Pulizia aggressiva del DOM e dell'array
+                objects.forEach(obj => {
+                    if (container.contains(obj.element)) {
+                        container.removeChild(obj.element);
+                    }
+                });
+                objects = []; // 🚩 Azzeramento completo dell'array
+
+                // Reset ai valori iniziali
                 currentLevel = 1;
                 GRAVITY_FACTOR = INITIAL_GRAVITY; 
                 SPAWN_INTERVAL_MS = 1000;
