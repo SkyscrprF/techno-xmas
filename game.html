@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cattura i Regali di Natale (Solo Livelli)</title>
+    <title>Cattura i Regali di Natale (Livelli Auto)</title>
     <style>
         body {
             display: flex;
@@ -37,26 +37,22 @@
             cursor: move;
             user-select: none;
         }
-        #score-panel {
+        /* AGGIORNATO: Ora usa flexbox per allineare punteggio e pulsante */
+        #score-panel { 
             margin-top: 10px;
             padding: 10px;
             background-color: #fff;
             border: 2px solid #0056b3;
             width: 500px;
             text-align: center;
-        }
-        #control-panel {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #fff;
-            border: 2px solid #5cb85c;
-            width: 500px;
-            text-align: center;
+            
+            display: flex; 
+            justify-content: space-around;
+            align-items: center;
         }
         #level-display {
             font-weight: bold;
             color: #d9534f;
-            margin-left: 15px;
         }
     </style>
 </head>
@@ -66,17 +62,14 @@
     <p>Usa il mouse per trascinare Babbo Natale o le frecce della tastiera (← e →).</p>
 
     <div id="score-panel">
-        Livello: <span id="level-display">1</span> | Punteggio: <span id="score">0</span> | Mancati: <span id="missed">0</span>
+        <div>Livello: <span id="level-display">1</span></div>
+        <div>Punteggio: <span id="score">0</span></div>
+        <div>Mancati: <span id="missed">0</span></div>
+        <button id="restart-button">Riavvia il Gioco</button>
     </div>
 
     <div id="game-container">
         <div id="sleigh">🎅</div>
-    </div>
-
-    <div id="control-panel">
-        <h3>🛠️ Parametri di Gioco</h3>
-        <p>Difficoltà gestita automaticamente dal sistema a livelli.</p>
-        <button id="restart-button">Riavvia il Gioco</button>
     </div>
 
     <script>
@@ -86,7 +79,7 @@
             // 🔑 VARIABILI DIDATTICHE E MODIFICABILI
             // =========================================================
 
-            let GRAVITY_FACTOR = 1.0; 
+            let GRAVITY_FACTOR = 1.2; // 🚩 INIZIO con gravità 1.2
             let SPAWN_INTERVAL_MS = 1000; 
             const SLEIGH_WIDTH = 80;    
             const OBJECT_SIZE = 45;     
@@ -95,9 +88,10 @@
 
             // VARIABILI PER IL SISTEMA A LIVELLI
             let currentLevel = 1;
+            const INITIAL_GRAVITY = 1.2; // 🚩 Definizione del punto di partenza
             const SCORE_TO_NEXT_LEVEL = 150; 
-            const LEVEL_INCREASE_GRAVITY = 0.2; // Aumento di gravità ad ogni livello
-            const LEVEL_DECREASE_SPAWN = 50; // Diminuzione dell'intervallo di spawn ad ogni livello
+            const LEVEL_INCREASE_GRAVITY = 0.2; 
+            const LEVEL_DECREASE_SPAWN = 50; 
 
             // =========================================================
             // LOGICA DI BASE
@@ -108,7 +102,6 @@
             const scoreDisplay = document.getElementById('score');
             const missedDisplay = document.getElementById('missed');
             const levelDisplay = document.getElementById('level-display');
-            // gravitySlider e gravityValueSpan rimossi
             const restartButton = document.getElementById('restart-button'); 
 
             let score = 0;
@@ -125,8 +118,6 @@
                 sleigh.style.left = sleighX + 'px';
             }
             initSleighPosition();
-            
-            // Rimosso: gravitySlider.addEventListener('input', ...)
 
             function updateSleighPosition(newX) {
                 if (newX < 0) {
@@ -134,84 +125,4 @@
                 } else if (newX > container.clientWidth - SLEIGH_WIDTH) {
                     newX = container.clientWidth - SLEIGH_WIDTH;
                 }
-                sleighX = newX;
-                sleigh.style.left = sleighX + 'px';
-            }
-
-            // =========================================================
-            // SISTEMA A LIVELLI
-            // =========================================================
-
-            function levelUp() {
-                currentLevel++;
-
-                // L'unica fonte di aumento della difficoltà è ora levelUp()
-                GRAVITY_FACTOR += LEVEL_INCREASE_GRAVITY;
-                SPAWN_INTERVAL_MS = Math.max(400, SPAWN_INTERVAL_MS - LEVEL_DECREASE_SPAWN);
-                
-                levelDisplay.textContent = currentLevel;
-
-                clearInterval(spawnInterval);
-                spawnInterval = setInterval(createFallingObject, SPAWN_INTERVAL_MS);
-
-                alert(`Livello ${currentLevel} raggiunto!\nGravità attuale: ${GRAVITY_FACTOR.toFixed(2)}`);
-            }
-
-            // =========================================================
-            // LOGICA DI GIOCO (updateGame e collisioni)
-            // =========================================================
-
-            function createFallingObject() {
-                if (!running) return;
-                const isGift = Math.random() > 0.3; 
-                const type = isGift ? 'gift' : 'coal';
-                const emoji = isGift ? '🎁' : '⚫';
-                
-                const obj = document.createElement('div');
-                obj.className = 'falling-object';
-                obj.textContent = emoji;
-                obj.dataset.type = type;
-
-                const posX = Math.random() * (container.clientWidth - OBJECT_SIZE);
-                obj.style.left = posX + 'px';
-                obj.style.top = '0px';
-
-                container.appendChild(obj);
-                objects.push({ element: obj, y: 0, speed: Math.random() * 0.5 + 1.0 });
-            }
-
-            function updateGame() {
-                if (!running) return;
-
-                if (score >= currentLevel * SCORE_TO_NEXT_LEVEL) {
-                    levelUp();
-                }
-
-                for (let i = objects.length - 1; i >= 0; i--) {
-                    const obj = objects[i];
-                    
-                    obj.y += obj.speed * GRAVITY_FACTOR;
-                    obj.element.style.top = obj.y + 'px';
-
-                    const isCollision = checkCollision(obj);
-
-                    if (isCollision) {
-                        handleCollision(obj, i);
-                        continue;
-                    }
-
-                    if (obj.y > container.clientHeight - OBJECT_SIZE) {
-                        if (obj.element.dataset.type === 'gift') {
-                            missed++;
-                            missedDisplay.textContent = missed;
-                        }
-                        removeObject(i);
-                    }
-                }
-                
-                if (missed >= 10) {
-                    stopGame(`Gioco Finito! Punteggio finale: ${score}. Raggiunto livello ${currentLevel}.`);
-                }
-            }
-
-            function check
+                sleigh
