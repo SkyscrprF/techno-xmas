@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cattura i Regali di Natale</title>
+    <title>Cattura i Regali di Natale (Solo Livelli)</title>
     <style>
         body {
             display: flex;
@@ -53,9 +53,6 @@
             width: 500px;
             text-align: center;
         }
-        input[type="range"] {
-            width: 80%;
-        }
         #level-display {
             font-weight: bold;
             color: #d9534f;
@@ -77,11 +74,8 @@
     </div>
 
     <div id="control-panel">
-        <h3>🛠️ Pannello di Controllo Didattico</h3>
-        <p>Modifica la **Gravità** (`GRAVITY_FACTOR`) in tempo reale per le tue lezioni:</p>
-        <label for="gravity-slider">Fattore Gravità:</label>
-        <input type="range" id="gravity-slider" min="1.0" max="4.0" step="0.1" value="1.0">
-        <span id="gravity-value">1.0</span>
+        <h3>🛠️ Parametri di Gioco</h3>
+        <p>Difficoltà gestita automaticamente dal sistema a livelli.</p>
         <button id="restart-button">Riavvia il Gioco</button>
     </div>
 
@@ -102,8 +96,8 @@
             // VARIABILI PER IL SISTEMA A LIVELLI
             let currentLevel = 1;
             const SCORE_TO_NEXT_LEVEL = 150; 
-            const LEVEL_INCREASE_GRAVITY = 0.2; 
-            const LEVEL_DECREASE_SPAWN = 50; 
+            const LEVEL_INCREASE_GRAVITY = 0.2; // Aumento di gravità ad ogni livello
+            const LEVEL_DECREASE_SPAWN = 50; // Diminuzione dell'intervallo di spawn ad ogni livello
 
             // =========================================================
             // LOGICA DI BASE
@@ -114,9 +108,8 @@
             const scoreDisplay = document.getElementById('score');
             const missedDisplay = document.getElementById('missed');
             const levelDisplay = document.getElementById('level-display');
-            const gravitySlider = document.getElementById('gravity-slider');
-            const gravityValueSpan = document.getElementById('gravity-value');
-            const restartButton = document.getElementById('restart-button'); // 🚩 NUOVA VARIABILE
+            // gravitySlider e gravityValueSpan rimossi
+            const restartButton = document.getElementById('restart-button'); 
 
             let score = 0;
             let missed = 0;
@@ -132,13 +125,8 @@
                 sleigh.style.left = sleighX + 'px';
             }
             initSleighPosition();
-
-            gravitySlider.addEventListener('input', (event) => {
-                if (running) {
-                    GRAVITY_FACTOR = parseFloat(event.target.value);
-                    gravityValueSpan.textContent = GRAVITY_FACTOR.toFixed(1);
-                }
-            });
+            
+            // Rimosso: gravitySlider.addEventListener('input', ...)
 
             function updateSleighPosition(newX) {
                 if (newX < 0) {
@@ -157,17 +145,16 @@
             function levelUp() {
                 currentLevel++;
 
+                // L'unica fonte di aumento della difficoltà è ora levelUp()
                 GRAVITY_FACTOR += LEVEL_INCREASE_GRAVITY;
                 SPAWN_INTERVAL_MS = Math.max(400, SPAWN_INTERVAL_MS - LEVEL_DECREASE_SPAWN);
                 
                 levelDisplay.textContent = currentLevel;
-                gravityValueSpan.textContent = GRAVITY_FACTOR.toFixed(1);
-                gravitySlider.value = GRAVITY_FACTOR; 
 
                 clearInterval(spawnInterval);
                 spawnInterval = setInterval(createFallingObject, SPAWN_INTERVAL_MS);
 
-                alert(`Livello ${currentLevel} raggiunto!`);
+                alert(`Livello ${currentLevel} raggiunto!\nGravità attuale: ${GRAVITY_FACTOR.toFixed(2)}`);
             }
 
             // =========================================================
@@ -227,118 +214,4 @@
                 }
             }
 
-            function checkCollision(obj) {
-                const objBottom = obj.y + OBJECT_SIZE;
-                const objLeft = parseFloat(obj.element.style.left);
-
-                const sleighTop = container.clientHeight - sleigh.clientHeight - COLLISION_BUFFER_Y; 
-                const sleighLeft = sleighX;
-                const sleighRight = sleighX + SLEIGH_WIDTH;
-
-                return objBottom >= sleighTop && 
-                       objLeft < sleighRight && 
-                       (objLeft + OBJECT_SIZE) > sleighLeft;
-            }
-
-            function handleCollision(obj, index) {
-                if (obj.element.dataset.type === 'gift') {
-                    score += 10;
-                    scoreDisplay.textContent = score;
-                    obj.element.textContent = '✅'; 
-                } else if (obj.element.dataset.type === 'coal') {
-                    score = Math.max(0, score - 5); 
-                    scoreDisplay.textContent = score;
-                    obj.element.textContent = '🔥'; 
-                }
-                
-                removeObject(index); 
-            }
-
-            function removeObject(index) {
-                if (index >= 0 && index < objects.length) {
-                    container.removeChild(objects[index].element);
-                    objects.splice(index, 1);
-                }
-            }
-
-            // =========================================================
-            // CONTROLLO INPUT E GIOCO
-            // =========================================================
-            
-            sleigh.addEventListener('mousedown', (e) => {
-                if (!running) return;
-                let shiftX = e.clientX - sleigh.getBoundingClientRect().left;
-                let containerLeft = container.getBoundingClientRect().left;
-
-                function moveAt(pageX) {
-                    let newX = pageX - shiftX - containerLeft;
-                    updateSleighPosition(newX);
-                }
-
-                function onMouseMove(event) {
-                    moveAt(event.pageX);
-                }
-
-                document.addEventListener('mousemove', onMouseMove);
-
-                sleigh.onmouseup = function() {
-                    document.removeEventListener('mousemove', onMouseMove);
-                    sleigh.onmouseup = null;
-                };
-
-                sleigh.ondragstart = () => false; 
-            });
-
-            document.addEventListener('keydown', (e) => {
-                if (!running) return;
-                if (e.key === 'ArrowLeft') {
-                    updateSleighPosition(sleighX - SLEIGH_SPEED);
-                } else if (e.key === 'ArrowRight') {
-                    updateSleighPosition(sleighX + SLEIGH_SPEED);
-                }
-            });
-
-            // 🚩 FIX: Listener per il pulsante
-            restartButton.addEventListener('click', startGame);
-
-            function startGame() {
-                clearInterval(gameLoopInterval);
-                clearInterval(spawnInterval);
-                objects.forEach(obj => container.removeChild(obj.element));
-                objects.length = 0;
-                
-                currentLevel = 1;
-                GRAVITY_FACTOR = 1.0;
-                SPAWN_INTERVAL_MS = 1000;
-
-                score = 0;
-                missed = 0;
-                scoreDisplay.textContent = score;
-                missedDisplay.textContent = missed;
-                levelDisplay.textContent = currentLevel;
-                gravityValueSpan.textContent = GRAVITY_FACTOR.toFixed(1);
-                gravitySlider.value = GRAVITY_FACTOR;
-                initSleighPosition();
-
-                running = true;
-
-                gameLoopInterval = setInterval(updateGame, 1000 / 60); 
-                spawnInterval = setInterval(createFallingObject, SPAWN_INTERVAL_MS);
-            }
-
-            function stopGame(message) {
-                running = false;
-                clearInterval(gameLoopInterval);
-                clearInterval(spawnInterval);
-                alert(message);
-            }
-
-            // Avvio iniziale del gioco
-            startGame();
-
-        }); 
-
-    </script>
-
-</body>
-</html>
+            function check
