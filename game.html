@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cattura i Regali di Natale (Livelli Auto)</title>
+    <title>Cattura i Regali di Natale (Livelli Auto Corretto)</title>
     <style>
         body {
             display: flex;
@@ -79,7 +79,7 @@
             // 🔑 VARIABILI DIDATTICHE E MODIFICABILI
             // =========================================================
 
-            let GRAVITY_FACTOR = 1.2; // 🚩 INIZIO con gravità 1.2
+            let GRAVITY_FACTOR = 1.2; 
             let SPAWN_INTERVAL_MS = 1000; 
             const SLEIGH_WIDTH = 80;    
             const OBJECT_SIZE = 45;     
@@ -88,7 +88,7 @@
 
             // VARIABILI PER IL SISTEMA A LIVELLI
             let currentLevel = 1;
-            const INITIAL_GRAVITY = 1.2; // 🚩 Definizione del punto di partenza
+            const INITIAL_GRAVITY = 1.2; 
             const SCORE_TO_NEXT_LEVEL = 150; 
             const LEVEL_INCREASE_GRAVITY = 0.2; 
             const LEVEL_DECREASE_SPAWN = 50; 
@@ -242,28 +242,31 @@
             // CONTROLLO INPUT E GIOCO
             // =========================================================
             
+            // 🚩 FIX: Logica di trascinamento rivista per usare addEventListener/removeEventListener 
+            // in modo più pulito e affidabile
             sleigh.addEventListener('mousedown', (e) => {
                 if (!running) return;
+                e.preventDefault(); // Previene il drag nativo del browser
+                
+                // Calcola lo scostamento iniziale (offset)
                 let shiftX = e.clientX - sleigh.getBoundingClientRect().left;
                 let containerLeft = container.getBoundingClientRect().left;
 
-                function moveAt(pageX) {
-                    let newX = pageX - shiftX - containerLeft;
+                // Funzione che gestisce il movimento del cursore
+                function onMouseMove(event) {
+                    let newX = event.clientX - shiftX - containerLeft;
                     updateSleighPosition(newX);
                 }
 
-                function onMouseMove(event) {
-                    moveAt(event.pageX);
+                // Funzione che interrompe il trascinamento (cleanup)
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
                 }
 
+                // Attiva l'ascolto per il movimento e il rilascio del mouse
                 document.addEventListener('mousemove', onMouseMove);
-
-                sleigh.onmouseup = function() {
-                    document.removeEventListener('mousemove', onMouseMove);
-                    sleigh.onmouseup = null;
-                };
-
-                sleigh.ondragstart = () => false; 
+                document.addEventListener('mouseup', onMouseUp);
             });
 
             document.addEventListener('keydown', (e) => {
@@ -285,7 +288,7 @@
                 
                 // Reset ai valori iniziali (1.2 per la gravità)
                 currentLevel = 1;
-                GRAVITY_FACTOR = INITIAL_GRAVITY; // 🚩 Utilizza la costante
+                GRAVITY_FACTOR = INITIAL_GRAVITY; 
                 SPAWN_INTERVAL_MS = 1000;
 
                 score = 0;
