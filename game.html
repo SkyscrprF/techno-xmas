@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cattura i Regali di Natale (Livelli)</title>
+    <title>Cattura i Regali di Natale (Funzionante)</title>
     <style>
         body {
             display: flex;
@@ -82,7 +82,7 @@
         <label for="gravity-slider">Fattore Gravità (GRAVITY_FACTOR):</label>
         <input type="range" id="gravity-slider" min="0.5" max="3.0" step="0.1" value="1.0">
         <span id="gravity-value">1.0</span>
-        <button onclick="startGame()">Riavvia il Gioco</button>
+        <button id="restart-button">Riavvia il Gioco</button>
     </div>
 
     <script>
@@ -97,7 +97,7 @@
             const SLEIGH_WIDTH = 80;    
             const OBJECT_SIZE = 45;     
             const SLEIGH_SPEED = 10; 
-            const COLLISION_BUFFER_Y = 20; // 🚩 NUOVA COSTANTE: Tolleranza verticale extra per la collisione
+            const COLLISION_BUFFER_Y = 20; 
 
             // VARIABILI PER IL SISTEMA A LIVELLI
             let currentLevel = 1;
@@ -116,6 +116,7 @@
             const levelDisplay = document.getElementById('level-display');
             const gravitySlider = document.getElementById('gravity-slider');
             const gravityValueSpan = document.getElementById('gravity-value');
+            const restartButton = document.getElementById('restart-button'); // 🚩 NUOVA VARIABILE
 
             let score = 0;
             let missed = 0;
@@ -166,8 +167,7 @@
                 clearInterval(spawnInterval);
                 spawnInterval = setInterval(createFallingObject, SPAWN_INTERVAL_MS);
 
-                console.log(`Livello ${currentLevel}! Gravità: ${GRAVITY_FACTOR.toFixed(1)}, Spawn MS: ${SPAWN_INTERVAL_MS}`);
-                alert(`Complimenti! Livello ${currentLevel} raggiunto!\nLa Gravità è aumentata e gli oggetti cadono più velocemente.`);
+                alert(`Livello ${currentLevel} raggiunto!`);
             }
 
             // =========================================================
@@ -231,7 +231,6 @@
                 const objBottom = obj.y + OBJECT_SIZE;
                 const objLeft = parseFloat(obj.element.style.left);
 
-                // 🚩 FIX: Aggiunge il buffer Y per estendere la zona di cattura verso l'alto
                 const sleighTop = container.clientHeight - sleigh.clientHeight - COLLISION_BUFFER_Y; 
                 const sleighLeft = sleighX;
                 const sleighRight = sleighX + SLEIGH_WIDTH;
@@ -299,6 +298,9 @@
                 }
             });
 
+            // 🚩 FIX: Listener per il pulsante
+            restartButton.addEventListener('click', startGame);
+
             function startGame() {
                 clearInterval(gameLoopInterval);
                 clearInterval(spawnInterval);
@@ -331,6 +333,7 @@
                 alert(message);
             }
 
+            // Avvio iniziale del gioco
             startGame();
 
         }); 
