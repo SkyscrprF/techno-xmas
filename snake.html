@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Snake Natalizio Didattico</title>
+    <style>
+        body {
+            background-color: #0f2a1d; /* Verde scuro natalizio */
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        canvas {
+            border: 5px solid #c0392b; /* Rosso natalizio */
+            background-color: #000;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+        #ui {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        #quiz-container {
+            display: none; /* Nascosto all'inizio */
+            position: absolute;
+            background: rgba(15, 42, 29, 0.95);
+            border: 2px solid white;
+            padding: 20px;
+            text-align: center;
+            width: 300px;
+        }
+        button {
+            background-color: #c0392b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        input {
+            padding: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h1>🎄 Snake Natalizio 🎄</h1>
+        <h3>Punteggio: <span id="punteggio">0</span></h3>
+    </div>
+
+    <canvas id="tavoloGioco" width="400" height="400"></canvas>
+
+    <div id="quiz-container">
+        <h2>Partita Finita!</h2>
+        <p>Hai analizzato il codice?</p>
+        <p>Come si chiama la variabile che decide la velocità del serpente?</p>
+        <input type="text" id="rispostaStudente" placeholder="Scrivi il nome qui...">
+        <br>
+        <button onclick="verificaRisposta()">Verifica</button>
+        <p id="risultatoQuiz"></p>
+        <br>
+        <button onclick="location.reload()">Rigioca</button>
+    </div>
+
+<script>
+    // --- CONFIGURAZIONE INIZIALE ---
+    const canvas = document.getElementById('tavoloGioco');
+    const ctx = canvas.getContext('2d');
+    
+    // Dimensione di un quadratino della griglia
+    const box = 20; 
+    
+    // Il Serpente (inizia al centro)
+    let serpente = [];
+    serpente[0] = { x: 10 * box, y: 10 * box };
+
+    // Il Regalo (Cibo)
+    let regalo = {
+        x: Math.floor(Math.random() * 20) * box,
+        y: Math.floor(Math.random() * 20) * box
+    };
+
+    let punteggio = 0;
+    let direzione;
+
+    // Ascolto dei tasti freccia
+    document.addEventListener("keydown", cambioDirezione);
+
+    function cambioDirezione(event) {
+        if(event.keyCode == 37 && direzione != "DESTRA") direzione = "SINISTRA";
+        if(event.keyCode == 38 && direzione != "GIU")    direzione = "SU";
+        if(event.keyCode == 39 && direzione != "SINISTRA") direzione = "DESTRA";
+        if(event.keyCode == 40 && direzione != "SU")     direzione = "GIU";
+    }
+
+    // ====================================================================
+    //      AREA DIDATTICA: CODICE DA ANALIZZARE (INIZIO)
+    // ====================================================================
+    
+    // Questa variabile determina ogni quanti millisecondi il gioco si aggiorna.
+    // Più il numero è basso, più il gioco è veloce.
+    let intervalloDiTempo = 200; 
+
+    function disegnaGioco() {
+        // Logica del movimento della testa
+        let snakeX = serpente[0].x;
+        let snakeY = serpente[0].y;
+
+        if(direzione == "SINISTRA") snakeX -= box;
+        if(direzione == "SU")       snakeY -= box;
+        if(direzione == "DESTRA")   snakeX += box;
+        if(direzione == "GIU")      snakeY += box;
+
+        // Se il serpente mangia il regalo
+        if(snakeX == regalo.x && snakeY == regalo.y) {
+            punteggio++;
+            document.getElementById('punteggio').innerText = punteggio;
+            
+            // Genera nuovo regalo
+            regalo = {
+                x: Math.floor(Math.random() * 20) * box,
+                y: Math.floor(Math.random() * 20) * box
+            };
+
+            // AUMENTO DIFFICOLTÀ: Riduciamo il tempo di attesa
+            // Il serpente diventa più veloce
+            if(intervalloDiTempo > 50) {
+                intervalloDiTempo = intervalloDiTempo - 5;
+            }
+
+        } else {
+            // Se non mangia, rimuoviamo la coda (movimento normale)
+            serpente.pop();
+        }
+        
+        // Creiamo la nuova testa
+        let nuovaTesta = { x: snakeX, y: snakeY };
+
+        // Controllo collisioni (Muri o se stesso)
+        if(snakeX < 0 || snakeX > 19 * box || snakeY < 0 || snakeY > 19 * box || collisione(nuovaTesta, serpente)) {
+            clearInterval(gioco); // Ferma il gioco
+            mostraQuiz();         // Mostra la domanda
+            return;
+        }
+
+        serpente.unshift(nuovaTesta); // Aggiunge la nuova testa all'array
+
+        // Puliamo e ridisegniamo tutto
+        renderizzaGrafica(); 
+    }
+
+    // Avvia il ciclo di gioco
+    // Nota: usiamo setTimeout ricorsivo o setInterval. 
+    // Qui usiamo una funzione speciale che si riavvia con la nuova velocità.
+    let gioco = setTimeout(loopDinamico, intervalloDiTempo);
+
+    function loopDinamico() {
+        disegnaGioco();
+        // Rilancia se stesso con la variabile aggiornata
+        gioco = setTimeout(loopDinamico, intervalloDiTempo); 
+    }
+
+    // ====================================================================
+    //      AREA DIDATTICA: CODICE DA ANALIZZARE (FINE)
+    // ====================================================================
+
+    function renderizzaGrafica() {
+        // Sfondo nero
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, 400, 400);
+
+        // Disegna Regalo
+        ctx.font = "20px Arial";
+        ctx.fillText("🎁", regalo.x - 2, regalo.y + 18);
+
+        // Disegna Serpente
+        for(let i = 0; i < serpente.length; i++) {
+            ctx.fillStyle = (i == 0) ? "#2ecc71" : "#27ae60"; // Testa verde chiaro, corpo scuro
+            ctx.fillRect(serpente[i].x, serpente[i].y, box, box);
+            
+            ctx.strokeStyle = "#0f2a1d";
+            ctx.strokeRect(serpente[i].x, serpente[i].y, box, box);
+        }
+    }
+
+    function collisione(testa, array) {
+        for(let i = 0; i < array.length; i++) {
+            if(testa.x == array[i].x && testa.y == array[i].y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function mostraQuiz() {
+        document.getElementById('quiz-container').style.display = 'block';
+    }
+
+    function verificaRisposta() {
+        let risposta = document.getElementById('rispostaStudente').value;
+        let feedback = document.getElementById('risultatoQuiz');
+        
+        // Accettiamo diverse varianti corrette
+        if(risposta.trim() === "intervalloDiTempo") {
+            punteggio += 50; // BONUS PUNTI
+            document.getElementById('punteggio').innerText = punteggio;
+            feedback.style.color = "#2ecc71";
+            feedback.innerHTML = "<strong>CORRETTO! +50 Punti!</strong><br>La variabile controlla i millisecondi di attesa.";
+        } else {
+            feedback.style.color = "#e74c3c";
+            feedback.innerText = "Sbagliato. Cerca una variabile che cambia valore quando mangi il regalo.";
+        }
+    }
+
+</script>
+</body>
+</html>
