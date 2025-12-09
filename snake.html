@@ -212,7 +212,7 @@
             punteggio += 50; // BONUS PUNTI
             document.getElementById('punteggio').innerText = punteggio;
             feedback.style.color = "#2ecc71";
-            feedback.innerHTML = "<strong>CORRETTO! +50 Punti!</strong><br>La variabile controlla i millisecondi di attesa.";
+            feedback.innerHTML = `<strong>CORRETTO! +50 Punti! (Totale: ${punteggio})</strong><br>La variabile controlla i millisecondi di attesa.`;
         } else {
             feedback.style.color = "#e74c3c";
             feedback.innerText = "Sbagliato. Cerca una variabile che cambia valore quando mangi il regalo.";
