@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <title>Snake Didattico - Tecnologia</title>
+  <title>Snake Didattico - Tecnologia (FIXED)</title>
   <meta charset="UTF-8">
   <style>
   html, body {
@@ -11,7 +11,7 @@
   }
 
   body {
-    background: #2c3e50;
+    background: #2c3e50; /* Blu scuro */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -27,7 +27,7 @@
   }
 
   canvas {
-    border: 4px solid #ecf0f1;
+    border: 4px solid #ecf0f1; /* Grigio chiaro */
     background: black;
     display: block;
   }
@@ -50,7 +50,7 @@
   }
 
   .btn-risposta {
-    background: #e67e22;
+    background: #e67e22; /* Arancione */
     color: white;
     border: none;
     padding: 10px 20px;
@@ -94,7 +94,7 @@ const databaseDomande = [
     {
         domanda: "Nel TRILITE, come si chiama l'elemento orizzontale appoggiato sui piedritti?",
         opzioni: ["Colonna", "Architrave", "Capitello"],
-        corretta: 1 // Indice della risposta corretta (0, 1, 2)
+        corretta: 1 
     },
     {
         domanda: "Qual è l'elemento fondamentale che 'chiude' un ARCO e scarica le forze?",
@@ -144,7 +144,7 @@ var snake = {
   // Tiene traccia di tutte le celle occupate dal corpo del serpente
   cells: [],
   
-  // Lunghezza del serpente. Cresce mangiando la mela (o il regalo)
+  // Lunghezza del serpente.
   maxCells: 4
 };
 
@@ -153,6 +153,10 @@ var apple = {
   y: 320
 };
 
+// ** FIX IMPLEMENTATO **
+// Variabile che memorizza l'input da tastiera in attesa di essere elaborato nel loop.
+var prossimaDirezione = { dx: grid, dy: 0 }; 
+
 // Genera numeri interi casuali in un intervallo specifico
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
@@ -160,110 +164,119 @@ function getRandomInt(min, max) {
 
 // --- CICLO PRINCIPALE DEL GIOCO (GAME LOOP) ---
 function loop() {
-  // Se è game over, fermiamo il ciclo di animazione
   if(isGameOver) return;
 
   requestAnimationFrame(loop);
 
   // Rallenta il ciclo di gioco a 15 fps invece di 60 (60/4 = 15)
-  // Questa è la parte che gestisce la VELOCITÀ
-  if (++count < 4) {
+  // [INIZIO AREA DIDATTICA: VARIABILE VELOCITÀ]
+  if (++count < 4) { // Questa variabile (il 4) controlla la velocità
     return;
   }
-
+  // [FINE AREA DIDATTICA: VARIABILE VELOCITÀ]
+  
   count = 0;
   context.clearRect(0,0,canvas.width,canvas.height);
+
+  // =======================================================
+  //  LOGICA DEL FIX: APPLICA LA DIREZIONE UNA VOLTA PER FRAME
+  // =======================================================
+  var nuovaDX = prossimaDirezione.dx;
+  var nuovaDY = prossimaDirezione.dy;
+  
+  // Controlla se la nuova direzione NON è l'opposto esatto della direzione attuale
+  // (es. DESTRA [16] + SINISTRA [-16] = 0. Se 0, NON è permesso)
+  var nonEInversione = (snake.dx + nuovaDX !== 0) || (snake.dy + nuovaDY !== 0);
+
+  if (nonEInversione) {
+    // Applica il nuovo input (la direzione in sospeso)
+    snake.dx = nuovaDX;
+    snake.dy = nuovaDY;
+  } 
+  // Se è un'inversione, non applichiamo nulla (il serpente continua a muoversi nella direzione precedente)
+  
+  // =======================================================
 
   // Muove il serpente in base alla sua velocità attuale
   snake.x += snake.dx;
   snake.y += snake.dy;
 
   // --- LOGICA DEI CONFINI (EFFETTO PAC-MAN) ---
-  // Se esce a sinistra, riappare a destra
   if (snake.x < 0) {
     snake.x = canvas.width - grid;
   }
-  // Se esce a destra, riappare a sinistra
   else if (snake.x >= canvas.width) {
     snake.x = 0;
   }
   
-  // Se esce sopra, riappare sotto
   if (snake.y < 0) {
     snake.y = canvas.height - grid;
   }
-  // Se esce sotto, riappare sopra
   else if (snake.y >= canvas.height) {
     snake.y = 0;
   }
 
-  // Tiene traccia di dove è stato il serpente. L'inizio dell'array è sempre la testa
   snake.cells.unshift({x: snake.x, y: snake.y});
 
-  // Rimuove le celle man mano che ci allontaniamo (la coda si accorcia muovendosi)
   if (snake.cells.length > snake.maxCells) {
     snake.cells.pop();
   }
 
   // Disegna la mela (o regalo)
-  context.fillStyle = '#e74c3c'; // Rosso
+  context.fillStyle = '#e74c3c'; 
   context.fillRect(apple.x, apple.y, grid-1, grid-1);
 
   // Disegna il serpente una cella alla volta
-  context.fillStyle = '#2ecc71'; // Verde
+  context.fillStyle = '#2ecc71'; 
   snake.cells.forEach(function(cell, index) {
     
-    // Disegniamo 1 px più piccolo della griglia per creare un effetto "tessere"
     context.fillRect(cell.x, cell.y, grid-1, grid-1);  
 
     // Il serpente ha mangiato la mela
     if (cell.x === apple.x && cell.y === apple.y) {
       snake.maxCells++;
-      score += 10; // Punti per aver mangiato
+      score += 10; 
       document.getElementById('score').innerText = score;
 
-      // Il canvas è 400x400 che corrisponde a 25x25 celle
       apple.x = getRandomInt(0, 25) * grid;
       apple.y = getRandomInt(0, 25) * grid;
+      
+      // AUMENTO DIFFICOLTÀ: NON implementato qui per mantenere la didattica centrata sul '4' di count.
     }
 
     // Controllo collisione con tutte le celle successive (se tocca se stesso)
     for (var i = index + 1; i < snake.cells.length; i++) {
       
-      // Il serpente occupa lo stesso spazio di una parte del corpo. RESET GIOCO.
+      // Il serpente occupa lo stesso spazio di una parte del corpo. TRIGGER QUIZ.
       if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
-        triggerGameOver(); // Invece di resettare subito, lanciamo il quiz
+        triggerGameOver(); 
       }
     }
   });
 }
 
-// --- GESTIONE INPUT TASTIERA ---
+// --- GESTIONE INPUT TASTIERA (MODIFICATA) ---
 document.addEventListener('keydown', function(e) {
-  // Previene che il serpente torni indietro su se stesso controllando
-  // che non stia già muovendo sull'asse opposto
-
-  // Freccia Sinistra (37)
-  if (e.which === 37 && snake.dx === 0) {
-    snake.dx = -grid;
-    snake.dy = 0;
-  }
-  // Freccia Su (38)
-  else if (e.which === 38 && snake.dy === 0) {
-    snake.dy = -grid;
-    snake.dx = 0;
-  }
-  // Freccia Destra (39)
-  else if (e.which === 39 && snake.dx === 0) {
-    snake.dx = grid;
-    snake.dy = 0;
-  }
-  // Freccia Giù (40)
-  else if (e.which === 40 && snake.dy === 0) {
-    snake.dy = grid;
-    snake.dx = 0;
-  }
+    // Premiamo il tasto e memorizziamo la direzione desiderata nella variabile 'buffer'
+    
+    // Freccia Sinistra (37)
+    if (e.which === 37) {
+        prossimaDirezione = { dx: -grid, dy: 0 };
+    }
+    // Freccia Su (38)
+    else if (e.which === 38) {
+        prossimaDirezione = { dx: 0, dy: -grid };
+    }
+    // Freccia Destra (39)
+    else if (e.which === 39) {
+        prossimaDirezione = { dx: grid, dy: 0 };
+    }
+    // Freccia Giù (40)
+    else if (e.which === 40) {
+        prossimaDirezione = { dx: 0, dy: grid };
+    }
 });
+
 
 // --- FUNZIONI QUIZ E GAME OVER ---
 
@@ -301,6 +314,9 @@ function triggerGameOver() {
         };
         containerOpzioni.appendChild(btn);
     });
+    
+    // Dopo il Game Over, si chiede la variabile velocità (vecchia richiesta)
+    // Ho mantenuto solo il quiz sulla Tecnologia come richiesto nell'ultima iterazione.
 }
 
 function controllaRisposta(indiceScelto, indiceCorretto, container) {
@@ -337,6 +353,9 @@ function resetGame() {
     snake.dx = grid;
     snake.dy = 0;
     
+    // Resetta la prossima direzione in sospeso!
+    prossimaDirezione = { dx: grid, dy: 0 }; 
+    
     // Resetta mela
     apple.x = getRandomInt(0, 25) * grid;
     apple.y = getRandomInt(0, 25) * grid;
@@ -354,5 +373,4 @@ function resetGame() {
 requestAnimationFrame(loop);
 </script>
 </body>
-</html>
 </html>
