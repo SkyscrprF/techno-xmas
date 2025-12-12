@@ -1,224 +1,358 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <title>Snake Natalizio Didattico</title>
-    <style>
-        body {
-            background-color: #0f2a1d; /* Verde scuro natalizio */
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        canvas {
-            border: 5px solid #c0392b; /* Rosso natalizio */
-            background-color: #000;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-        }
-        #ui {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        #quiz-container {
-            display: none; /* Nascosto all'inizio */
-            position: absolute;
-            background: rgba(15, 42, 29, 0.95);
-            border: 2px solid white;
-            padding: 20px;
-            text-align: center;
-            width: 300px;
-        }
-        button {
-            background-color: #c0392b;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        input {
-            padding: 5px;
-            font-size: 16px;
-        }
-    </style>
+  <title>Snake Didattico - Tecnologia</title>
+  <meta charset="UTF-8">
+  <style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Verdana', sans-serif;
+  }
+
+  body {
+    background: #2c3e50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  h1 { margin-bottom: 10px; font-size: 24px; }
+  
+  #game-container {
+    position: relative;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  }
+
+  canvas {
+    border: 4px solid #ecf0f1;
+    background: black;
+    display: block;
+  }
+
+  /* Stile per il pannello del Quiz */
+  #quiz-overlay {
+    display: none; /* Nascosto di default */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(44, 62, 80, 0.95);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .btn-risposta {
+    background: #e67e22;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 80%;
+    border-radius: 5px;
+    transition: background 0.3s;
+  }
+
+  .btn-risposta:hover { background: #d35400; }
+
+  #punteggio-box {
+    margin-top: 10px;
+    font-size: 18px;
+  }
+  </style>
 </head>
 <body>
 
-    <div id="ui">
-        <h1>🎄 Snake Natalizio 🎄</h1>
-        <h3>Punteggio: <span id="punteggio">0</span></h3>
-    </div>
+<h1>Strutture Portanti Snake 🐍</h1>
 
-    <canvas id="tavoloGioco" width="400" height="400"></canvas>
-
-    <div id="quiz-container">
-        <h2>Partita Finita!</h2>
-        <p>Hai analizzato il codice?</p>
-        <p>Come si chiama la variabile che decide la velocità del serpente?</p>
-        <input type="text" id="rispostaStudente" placeholder="Scrivi il nome qui...">
-        <br>
-        <button onclick="verificaRisposta()">Verifica</button>
-        <p id="risultatoQuiz"></p>
-        <br>
-        <button onclick="location.reload()">Rigioca</button>
+<div id="game-container">
+    <canvas width="400" height="400" id="game"></canvas>
+    
+    <div id="quiz-overlay">
+        <h2 id="titolo-quiz">Game Over!</h2>
+        <p id="testo-domanda">Domanda...</p>
+        <div id="opzioni-container"></div>
+        <p id="feedback" style="font-weight:bold; margin-top:10px;"></p>
+        <button id="btn-rigioca" style="display:none; margin-top:15px; padding:10px; background:#27ae60; color:white; border:none; cursor:pointer;" onclick="resetGame()">Gioca di nuovo</button>
     </div>
+</div>
+
+<div id="punteggio-box">Punti: <span id="score">0</span></div>
 
 <script>
-    // --- CONFIGURAZIONE INIZIALE ---
-    const canvas = document.getElementById('tavoloGioco');
-    const ctx = canvas.getContext('2d');
+// --- CONFIGURAZIONE DATABASE DOMANDE (TECNOLOGIA) ---
+const databaseDomande = [
+    {
+        domanda: "Nel TRILITE, come si chiama l'elemento orizzontale appoggiato sui piedritti?",
+        opzioni: ["Colonna", "Architrave", "Capitello"],
+        corretta: 1 // Indice della risposta corretta (0, 1, 2)
+    },
+    {
+        domanda: "Qual è l'elemento fondamentale che 'chiude' un ARCO e scarica le forze?",
+        opzioni: ["Chiave di volta", "Concio basale", "Piedritto"],
+        corretta: 0
+    },
+    {
+        domanda: "Nella CAPRIATA, quale elemento lavora a trazione impedendo al tetto di aprirsi?",
+        opzioni: ["Puntone", "Monaco", "Catena"],
+        corretta: 2
+    },
+    {
+        domanda: "Nel CEMENTO ARMATO, qual è la funzione delle barre di acciaio?",
+        opzioni: ["Resistere alla compressione", "Resistere alla trazione", "Abbellire la struttura"],
+        corretta: 1
+    },
+    {
+        domanda: "Quale struttura è composta da travi e pilastri solidali tra loro?",
+        opzioni: ["Telaio", "Arco a tutto sesto", "Isostatica"],
+        corretta: 0
+    },
+    {
+        domanda: "La forza che tende a schiacciare un materiale si chiama:",
+        opzioni: ["Trazione", "Compressione", "Torsione"],
+        corretta: 1
+    }
+];
+
+// --- VARIABILI DI GIOCO ---
+var canvas = document.getElementById('game');
+var context = canvas.getContext('2d');
+
+// Dimensione della griglia (16px) e contatore per rallentare il gioco
+var grid = 16;
+var count = 0;
+var score = 0;
+var isGameOver = false;
+
+var snake = {
+  x: 160,
+  y: 160,
+  
+  // Velocità del serpente. Si muove di una lunghezza griglia per ogni frame
+  dx: grid,
+  dy: 0,
+  
+  // Tiene traccia di tutte le celle occupate dal corpo del serpente
+  cells: [],
+  
+  // Lunghezza del serpente. Cresce mangiando la mela (o il regalo)
+  maxCells: 4
+};
+
+var apple = {
+  x: 320,
+  y: 320
+};
+
+// Genera numeri interi casuali in un intervallo specifico
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+// --- CICLO PRINCIPALE DEL GIOCO (GAME LOOP) ---
+function loop() {
+  // Se è game over, fermiamo il ciclo di animazione
+  if(isGameOver) return;
+
+  requestAnimationFrame(loop);
+
+  // Rallenta il ciclo di gioco a 15 fps invece di 60 (60/4 = 15)
+  // Questa è la parte che gestisce la VELOCITÀ
+  if (++count < 4) {
+    return;
+  }
+
+  count = 0;
+  context.clearRect(0,0,canvas.width,canvas.height);
+
+  // Muove il serpente in base alla sua velocità attuale
+  snake.x += snake.dx;
+  snake.y += snake.dy;
+
+  // --- LOGICA DEI CONFINI (EFFETTO PAC-MAN) ---
+  // Se esce a sinistra, riappare a destra
+  if (snake.x < 0) {
+    snake.x = canvas.width - grid;
+  }
+  // Se esce a destra, riappare a sinistra
+  else if (snake.x >= canvas.width) {
+    snake.x = 0;
+  }
+  
+  // Se esce sopra, riappare sotto
+  if (snake.y < 0) {
+    snake.y = canvas.height - grid;
+  }
+  // Se esce sotto, riappare sopra
+  else if (snake.y >= canvas.height) {
+    snake.y = 0;
+  }
+
+  // Tiene traccia di dove è stato il serpente. L'inizio dell'array è sempre la testa
+  snake.cells.unshift({x: snake.x, y: snake.y});
+
+  // Rimuove le celle man mano che ci allontaniamo (la coda si accorcia muovendosi)
+  if (snake.cells.length > snake.maxCells) {
+    snake.cells.pop();
+  }
+
+  // Disegna la mela (o regalo)
+  context.fillStyle = '#e74c3c'; // Rosso
+  context.fillRect(apple.x, apple.y, grid-1, grid-1);
+
+  // Disegna il serpente una cella alla volta
+  context.fillStyle = '#2ecc71'; // Verde
+  snake.cells.forEach(function(cell, index) {
     
-    // Dimensione di un quadratino della griglia
-    const box = 20; 
+    // Disegniamo 1 px più piccolo della griglia per creare un effetto "tessere"
+    context.fillRect(cell.x, cell.y, grid-1, grid-1);  
+
+    // Il serpente ha mangiato la mela
+    if (cell.x === apple.x && cell.y === apple.y) {
+      snake.maxCells++;
+      score += 10; // Punti per aver mangiato
+      document.getElementById('score').innerText = score;
+
+      // Il canvas è 400x400 che corrisponde a 25x25 celle
+      apple.x = getRandomInt(0, 25) * grid;
+      apple.y = getRandomInt(0, 25) * grid;
+    }
+
+    // Controllo collisione con tutte le celle successive (se tocca se stesso)
+    for (var i = index + 1; i < snake.cells.length; i++) {
+      
+      // Il serpente occupa lo stesso spazio di una parte del corpo. RESET GIOCO.
+      if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+        triggerGameOver(); // Invece di resettare subito, lanciamo il quiz
+      }
+    }
+  });
+}
+
+// --- GESTIONE INPUT TASTIERA ---
+document.addEventListener('keydown', function(e) {
+  // Previene che il serpente torni indietro su se stesso controllando
+  // che non stia già muovendo sull'asse opposto
+
+  // Freccia Sinistra (37)
+  if (e.which === 37 && snake.dx === 0) {
+    snake.dx = -grid;
+    snake.dy = 0;
+  }
+  // Freccia Su (38)
+  else if (e.which === 38 && snake.dy === 0) {
+    snake.dy = -grid;
+    snake.dx = 0;
+  }
+  // Freccia Destra (39)
+  else if (e.which === 39 && snake.dx === 0) {
+    snake.dx = grid;
+    snake.dy = 0;
+  }
+  // Freccia Giù (40)
+  else if (e.which === 40 && snake.dy === 0) {
+    snake.dy = grid;
+    snake.dx = 0;
+  }
+});
+
+// --- FUNZIONI QUIZ E GAME OVER ---
+
+function triggerGameOver() {
+    isGameOver = true;
     
-    // Il Serpente (inizia al centro)
-    let serpente = [];
-    serpente[0] = { x: 10 * box, y: 10 * box };
+    // Pesca una domanda casuale
+    const indiceRandom = Math.floor(Math.random() * databaseDomande.length);
+    const domandaScelta = databaseDomande[indiceRandom];
 
-    // Il Regalo (Cibo)
-    let regalo = {
-        x: Math.floor(Math.random() * 20) * box,
-        y: Math.floor(Math.random() * 20) * box
-    };
+    // Mostra Overlay
+    const overlay = document.getElementById('quiz-overlay');
+    const titolo = document.getElementById('titolo-quiz');
+    const testo = document.getElementById('testo-domanda');
+    const containerOpzioni = document.getElementById('opzioni-container');
+    const feedback = document.getElementById('feedback');
+    const btnRigioca = document.getElementById('btn-rigioca');
 
-    let punteggio = 0;
-    let direzione;
-
-    // Ascolto dei tasti freccia
-    document.addEventListener("keydown", cambioDirezione);
-
-    function cambioDirezione(event) {
-        if(event.keyCode == 37 && direzione != "DESTRA") direzione = "SINISTRA";
-        if(event.keyCode == 38 && direzione != "GIU")    direzione = "SU";
-        if(event.keyCode == 39 && direzione != "SINISTRA") direzione = "DESTRA";
-        if(event.keyCode == 40 && direzione != "SU")     direzione = "GIU";
-    }
-
-    // ====================================================================
-    //      AREA DIDATTICA: CODICE DA ANALIZZARE (INIZIO)
-    // ====================================================================
+    overlay.style.display = 'flex';
+    titolo.innerText = "Schianto! Rispondi per salvarti i punti";
+    testo.innerText = domandaScelta.domanda;
     
-    // Questa variabile determina ogni quanti millisecondi il gioco si aggiorna.
-    // Più il numero è basso, più il gioco è veloce.
-    let intervalloDiTempo = 200; 
+    // Pulisce opzioni vecchie e resetta stato
+    containerOpzioni.innerHTML = '';
+    feedback.innerText = '';
+    btnRigioca.style.display = 'none';
 
-    function disegnaGioco() {
-        // Logica del movimento della testa
-        let snakeX = serpente[0].x;
-        let snakeY = serpente[0].y;
+    // Crea i bottoni per le risposte
+    domandaScelta.opzioni.forEach((opzione, index) => {
+        let btn = document.createElement('button');
+        btn.innerText = opzione;
+        btn.className = 'btn-risposta';
+        btn.onclick = function() {
+            controllaRisposta(index, domandaScelta.corretta, containerOpzioni);
+        };
+        containerOpzioni.appendChild(btn);
+    });
+}
 
-        if(direzione == "SINISTRA") snakeX -= box;
-        if(direzione == "SU")       snakeY -= box;
-        if(direzione == "DESTRA")   snakeX += box;
-        if(direzione == "GIU")      snakeY += box;
+function controllaRisposta(indiceScelto, indiceCorretto, container) {
+    const feedback = document.getElementById('feedback');
+    const btnRigioca = document.getElementById('btn-rigioca');
+    
+    // Disabilita tutti i bottoni dopo il click
+    let bottoni = container.querySelectorAll('button');
+    bottoni.forEach(b => b.disabled = true);
 
-        // Se il serpente mangia il regalo
-        if(snakeX == regalo.x && snakeY == regalo.y) {
-            punteggio++;
-            document.getElementById('punteggio').innerText = punteggio;
-            
-            // Genera nuovo regalo
-            regalo = {
-                x: Math.floor(Math.random() * 20) * box,
-                y: Math.floor(Math.random() * 20) * box
-            };
-
-            // AUMENTO DIFFICOLTÀ: Riduciamo il tempo di attesa
-            // Il serpente diventa più veloce
-            if(intervalloDiTempo > 50) {
-                intervalloDiTempo = intervalloDiTempo - 5;
-            }
-
-        } else {
-            // Se non mangia, rimuoviamo la coda (movimento normale)
-            serpente.pop();
-        }
-        
-        // Creiamo la nuova testa
-        let nuovaTesta = { x: snakeX, y: snakeY };
-
-        // Controllo collisioni (Muri o se stesso)
-        if(snakeX < 0 || snakeX > 19 * box || snakeY < 0 || snakeY > 19 * box || collisione(nuovaTesta, serpente)) {
-            clearInterval(gioco); // Ferma il gioco
-            mostraQuiz();         // Mostra la domanda
-            return;
-        }
-
-        serpente.unshift(nuovaTesta); // Aggiunge la nuova testa all'array
-
-        // Puliamo e ridisegniamo tutto
-        renderizzaGrafica(); 
+    if(indiceScelto === indiceCorretto) {
+        feedback.style.color = '#2ecc71';
+        feedback.innerText = "RISPOSTA ESATTA! +50 Punti Bonus";
+        score += 50;
+        document.getElementById('score').innerText = score;
+    } else {
+        feedback.style.color = '#e74c3c';
+        feedback.innerText = "SBAGLIATO! La risposta corretta era: " + bottoni[indiceCorretto].innerText;
     }
+    
+    // Mostra il tasto per ricominciare
+    btnRigioca.style.display = 'inline-block';
+}
 
-    // Avvia il ciclo di gioco
-    // Nota: usiamo setTimeout ricorsivo o setInterval. 
-    // Qui usiamo una funzione speciale che si riavvia con la nuova velocità.
-    let gioco = setTimeout(loopDinamico, intervalloDiTempo);
+function resetGame() {
+    // Nascondi overlay
+    document.getElementById('quiz-overlay').style.display = 'none';
+    
+    // Resetta variabili Snake
+    snake.x = 160;
+    snake.y = 160;
+    snake.cells = [];
+    snake.maxCells = 4;
+    snake.dx = grid;
+    snake.dy = 0;
+    
+    // Resetta mela
+    apple.x = getRandomInt(0, 25) * grid;
+    apple.y = getRandomInt(0, 25) * grid;
 
-    function loopDinamico() {
-        disegnaGioco();
-        // Rilancia se stesso con la variabile aggiornata
-        gioco = setTimeout(loopDinamico, intervalloDiTempo); 
-    }
+    // Resetta punteggio
+    score = 0;
+    document.getElementById('score').innerText = score;
 
-    // ====================================================================
-    //      AREA DIDATTICA: CODICE DA ANALIZZARE (FINE)
-    // ====================================================================
+    // Riavvia Loop
+    isGameOver = false;
+    requestAnimationFrame(loop);
+}
 
-    function renderizzaGrafica() {
-        // Sfondo nero
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, 400, 400);
-
-        // Disegna Regalo
-        ctx.font = "20px Arial";
-        ctx.fillText("🎁", regalo.x - 2, regalo.y + 18);
-
-        // Disegna Serpente
-        for(let i = 0; i < serpente.length; i++) {
-            ctx.fillStyle = (i == 0) ? "#2ecc71" : "#27ae60"; // Testa verde chiaro, corpo scuro
-            ctx.fillRect(serpente[i].x, serpente[i].y, box, box);
-            
-            ctx.strokeStyle = "#0f2a1d";
-            ctx.strokeRect(serpente[i].x, serpente[i].y, box, box);
-        }
-    }
-
-    function collisione(testa, array) {
-        for(let i = 0; i < array.length; i++) {
-            if(testa.x == array[i].x && testa.y == array[i].y) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function mostraQuiz() {
-        document.getElementById('quiz-container').style.display = 'block';
-    }
-
-    function verificaRisposta() {
-        let risposta = document.getElementById('rispostaStudente').value;
-        let feedback = document.getElementById('risultatoQuiz');
-        
-        // Accettiamo diverse varianti corrette
-        if(risposta.trim() === "intervalloDiTempo") {
-            punteggio += 50; // BONUS PUNTI
-            document.getElementById('punteggio').innerText = punteggio;
-            feedback.style.color = "#2ecc71";
-            feedback.innerHTML = `<strong>CORRETTO! +50 Punti! (Totale: ${punteggio})</strong><br>La variabile controlla i millisecondi di attesa.`;
-        } else {
-            feedback.style.color = "#e74c3c";
-            feedback.innerText = "Sbagliato. Cerca una variabile che cambia valore quando mangi il regalo.";
-        }
-    }
-
+// Avvia il gioco la prima volta
+requestAnimationFrame(loop);
 </script>
 </body>
+</html>
 </html>
